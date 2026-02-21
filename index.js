@@ -124,32 +124,14 @@ async function setupServer(guild) {
                     '**Unsere Dienstleistungen & Preise**\n\n' +
                     '━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
                     '🌐 **Website Erstellung**\n' +
-                    '> `10€ – 30€` je nach Wünschen\n' +
-                    '> ✦ Responsive Design\n' +
-                    '> ✦ Individuelles Layout\n' +
-                    '> ✦ Statisches Design (kein Animated)\n' +
-                    '> ✦ Inkl. Hosting-Beratung\n\n' +
-                    '━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
+                    '> `10€ – 30€`\n\n' +
                     '🤖 **Discord Bot Entwicklung**\n' +
-                    '> `15€ – 50€` je nach Funktionen\n' +
-                    '> ✦ Moderation, Tickets, Verifizierung\n' +
-                    '> ✦ Custom Commands & Features\n' +
-                    '> ✦ 24/7 Hosting möglich\n' +
-                    '> ✦ Nachträgliche Anpassungen\n\n' +
-                    '━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
+                    '> `15€ – 50€`\n\n' +
                     '🎨 **Logo Design**\n' +
-                    '> `5€ – 10€`\n' +
-                    '> ✦ Professionelles Design\n' +
-                    '> ✦ Statisch (kein Animated)\n' +
-                    '> ✦ Alle gängigen Formate\n\n' +
-                    '━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
+                    '> `5€ – 10€`\n\n' +
                     '🖼️ **Banner Design**\n' +
-                    '> `5€`\n' +
-                    '> ✦ Discord / Server Banner\n' +
-                    '> ✦ Statisch (kein Animated)\n' +
-                    '> ✦ Individuelles Design\n\n' +
+                    '> `5€`\n\n' +
                     '━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
-                    '> 💡 **Alle Designs sind statisch – keine animierten Elemente.**\n\n' +
                     '📩 **Interesse?** Erstelle ein Ticket im <#' + (channels.ticket?.id || 'ticket-channel') + '> Kanal!'
                 )
                 .setColor(0xFEE75C)
