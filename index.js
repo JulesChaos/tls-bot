@@ -65,6 +65,22 @@ async function setupServer(guild) {
         } catch (e) { console.log('  ❌ Konnte Portfolio-Channel nicht erstellen:', e.message); }
     }
 
+    // ── Auto-create 💰・preisliste channel if missing (in Community category) ──
+    let preislisteCh = guild.channels.cache.find(c => c.name === '💰・preisliste');
+    if (!preislisteCh) {
+        try {
+            const communityCat = guild.channels.cache.find(c => c.type === ChannelType.GuildCategory && c.name.toLowerCase().includes('community'));
+            preislisteCh = await guild.channels.create({
+                name: '💰・preisliste',
+                type: ChannelType.GuildText,
+                topic: '💰 TLS Service – Preisliste & Angebote',
+                parent: communityCat?.id || null,
+                reason: 'Auto-created by TLS Bot'
+            });
+            console.log('  ✅ Channel "💰・preisliste" erstellt!');
+        } catch (e) { console.log('  ❌ Konnte Preisliste-Channel nicht erstellen:', e.message); }
+    }
+
     const channels = {
         verify: guild.channels.cache.find(c => c.name === '✅・verifizierung'),
         ticket: guild.channels.cache.find(c => c.name === '🎫・ticket-erstellen'),
@@ -73,6 +89,7 @@ async function setupServer(guild) {
         rules: guild.channels.cache.find(c => c.name === '📜・regelwerk'),
         announce: guild.channels.cache.find(c => c.name === '📢・ankündigungen'),
         portfolio: portfolioCh,
+        preisliste: preislisteCh,
     };
 
     async function sendIfNew(ch, embed, row) {
@@ -81,6 +98,50 @@ async function setupServer(guild) {
         if (!msgs.find(m => m.author.id === client.user.id && m.embeds.length > 0)) {
             await ch.send(row ? { embeds: [embed], components: [row] } : { embeds: [embed] });
         }
+    }
+
+    // ── Preisliste Embed ──
+    if (channels.preisliste) {
+        await sendIfNew(channels.preisliste,
+            new EmbedBuilder()
+                .setTitle('💰 TLS Service – Preisliste')
+                .setDescription(
+                    '**Unsere Dienstleistungen & Preise**\n\n' +
+                    '━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
+                    '🌐 **Website Erstellung**\n' +
+                    '> `10€ – 30€` je nach Wünschen\n' +
+                    '> ✦ Responsive Design\n' +
+                    '> ✦ Individuelles Layout\n' +
+                    '> ✦ Statisches Design (kein Animated)\n' +
+                    '> ✦ Inkl. Hosting-Beratung\n\n' +
+                    '━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
+                    '🤖 **Discord Bot Entwicklung**\n' +
+                    '> `15€ – 50€` je nach Funktionen\n' +
+                    '> ✦ Moderation, Tickets, Verifizierung\n' +
+                    '> ✦ Custom Commands & Features\n' +
+                    '> ✦ 24/7 Hosting möglich\n' +
+                    '> ✦ Nachträgliche Anpassungen\n\n' +
+                    '━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
+                    '🎨 **Logo Design**\n' +
+                    '> `5€ – 10€`\n' +
+                    '> ✦ Professionelles Design\n' +
+                    '> ✦ Statisch (kein Animated)\n' +
+                    '> ✦ Alle gängigen Formate\n\n' +
+                    '━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
+                    '🖼️ **Banner Design**\n' +
+                    '> `5€`\n' +
+                    '> ✦ Discord / Server Banner\n' +
+                    '> ✦ Statisch (kein Animated)\n' +
+                    '> ✦ Individuelles Design\n\n' +
+                    '━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
+                    '> 💡 **Alle Designs sind statisch – keine animierten Elemente.**\n\n' +
+                    '📩 **Interesse?** Erstelle ein Ticket im <#' + (channels.ticket?.id || 'ticket-channel') + '> Kanal!'
+                )
+                .setColor(0xFEE75C)
+                .setImage(config.bannerUrl)
+                .setFooter({ text: '© 2026 TLS Service • Preise können variieren' })
+                .setTimestamp()
+        );
     }
 
     // ── Clear old Regelwerk messages (to re-send with Akzeptieren button) ──
