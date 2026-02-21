@@ -164,44 +164,10 @@ async function setupServer(guild) {
         console.log('  ⚠️ Preisliste channel nicht gefunden!');
     }
 
-    // ── Regelwerk: clear old (without button) & resend with Akzeptieren ──
+    // ── Regelwerk: clear ALL old & resend with Akzeptieren ──
     if (channels.rules) {
-        try {
-            const oldMsgs = await channels.rules.messages.fetch({ limit: 10 });
-            const botMsgs = oldMsgs.filter(m => m.author.id === client.user.id && m.embeds.length > 0 && !m.components.length);
-            for (const [, msg] of botMsgs) {
-                await msg.delete().catch(() => { });
-            }
-        } catch (e) { }
-    }
-
-    if (channels.verify) {
-        await sendIfNew(channels.verify,
-            new EmbedBuilder().setTitle('✅ Verifizierung').setDescription('Willkommen bei **TLS**!\n\nKlicke den Button, um dich zu verifizieren.\n\n> Mit der Verifizierung akzeptierst du unser Regelwerk.').setColor(0x57F287).setImage(config.bannerUrl).setFooter({ text: 'TLS Service' }),
-            new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('verify_user').setLabel('Verifizieren').setStyle(ButtonStyle.Success).setEmoji('✅'))
-        );
-    }
-    if (channels.ticket) {
-        await sendIfNew(channels.ticket,
-            new EmbedBuilder().setTitle('🎫 Support Ticket').setDescription('Brauchst du Hilfe?\n\nKlicke den Button, um ein privates Ticket zu eröffnen.\n\n> **Bitte missbrauche das System nicht.**').setColor(0x5865F2).setImage(config.bannerUrl).setFooter({ text: 'TLS Service • Support' }),
-            new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('create_ticket').setLabel('Ticket erstellen').setStyle(ButtonStyle.Primary).setEmoji('🎫'))
-        );
-    }
-    if (channels.feedback) {
-        await sendIfNew(channels.feedback,
-            new EmbedBuilder().setTitle('📝 Feedback').setDescription('Deine Meinung zählt!\n\nKlicke den Button, um uns Feedback zu geben.\n\n> **Jedes Feedback wird vom Team gelesen.**').setColor(0xFEE75C).setImage(config.bannerUrl).setFooter({ text: 'TLS Service • Feedback' }),
-            new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('open_feedback_modal').setLabel('Feedback schreiben').setStyle(ButtonStyle.Secondary).setEmoji('📝'))
-        );
-    }
-    if (channels.rating) {
-        await sendIfNew(channels.rating,
-            new EmbedBuilder().setTitle('⭐ Server bewerten').setDescription('Wie gefällt dir **TLS**?\n\nKlicke den Button, um eine Bewertung abzugeben.\n\n> **Deine Bewertung wird öffentlich gepostet.**').setColor(0xFEE75C).setImage(config.bannerUrl).setFooter({ text: 'TLS Service • Bewertungen' }),
-            new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('open_rating_modal').setLabel('Bewerten').setStyle(ButtonStyle.Secondary).setEmoji('⭐'))
-        );
-    }
-    if (channels.rules) {
-        await sendIfNew(channels.rules,
-            new EmbedBuilder().setTitle('📜 Serverregeln – TLS').setDescription(
+        await clearAndSend(channels.rules, [{
+            embed: new EmbedBuilder().setTitle('📜 Serverregeln – TLS').setDescription(
                 '**§1 – Respekt**\nBeleidigungen und Diskriminierung werden nicht toleriert.\n\n' +
                 '**§2 – Spam**\nSpam, Capslock-Missbrauch und Pingen sind verboten.\n\n' +
                 '**§3 – Werbung**\nWerbung ohne Genehmigung ist untersagt.\n\n' +
@@ -213,14 +179,46 @@ async function setupServer(guild) {
                 '━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
                 '✅ **Klicke auf "Akzeptieren"**, um zu bestätigen, dass du das Regelwerk gelesen und verstanden hast.'
             ).setColor(0xED4245).setImage(config.bannerUrl).setFooter({ text: 'TLS Service • Stand: Februar 2026' }),
-            new ActionRowBuilder().addComponents(
+            row: new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId('accept_rules')
                     .setLabel('Akzeptieren')
                     .setStyle(ButtonStyle.Success)
                     .setEmoji('✅')
             )
-        );
+        }]);
+    }
+
+    // ── Verify: clear & resend ──
+    if (channels.verify) {
+        await clearAndSend(channels.verify, [{
+            embed: new EmbedBuilder().setTitle('✅ Verifizierung').setDescription('Willkommen bei **TLS**!\n\nKlicke den Button, um dich zu verifizieren.\n\n> Mit der Verifizierung akzeptierst du unser Regelwerk.').setColor(0x57F287).setImage(config.bannerUrl).setFooter({ text: 'TLS Service' }),
+            row: new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('verify_user').setLabel('Verifizieren').setStyle(ButtonStyle.Success).setEmoji('✅'))
+        }]);
+    }
+
+    // ── Ticket: clear & resend ──
+    if (channels.ticket) {
+        await clearAndSend(channels.ticket, [{
+            embed: new EmbedBuilder().setTitle('🎫 Support Ticket').setDescription('Brauchst du Hilfe?\n\nKlicke den Button, um ein privates Ticket zu eröffnen.\n\n> **Bitte missbrauche das System nicht.**').setColor(0x5865F2).setImage(config.bannerUrl).setFooter({ text: 'TLS Service • Support' }),
+            row: new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('create_ticket').setLabel('Ticket erstellen').setStyle(ButtonStyle.Primary).setEmoji('🎫'))
+        }]);
+    }
+
+    // ── Feedback: clear & resend ──
+    if (channels.feedback) {
+        await clearAndSend(channels.feedback, [{
+            embed: new EmbedBuilder().setTitle('📝 Feedback').setDescription('Deine Meinung zählt!\n\nKlicke den Button, um uns Feedback zu geben.\n\n> **Jedes Feedback wird vom Team gelesen.**').setColor(0xFEE75C).setImage(config.bannerUrl).setFooter({ text: 'TLS Service • Feedback' }),
+            row: new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('open_feedback_modal').setLabel('Feedback schreiben').setStyle(ButtonStyle.Secondary).setEmoji('📝'))
+        }]);
+    }
+
+    // ── Rating: clear & resend ──
+    if (channels.rating) {
+        await clearAndSend(channels.rating, [{
+            embed: new EmbedBuilder().setTitle('⭐ Server bewerten').setDescription('Wie gefällt dir **TLS**?\n\nKlicke den Button, um eine Bewertung abzugeben.\n\n> **Deine Bewertung wird öffentlich gepostet.**').setColor(0xFEE75C).setImage(config.bannerUrl).setFooter({ text: 'TLS Service • Bewertungen' }),
+            row: new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('open_rating_modal').setLabel('Bewerten').setStyle(ButtonStyle.Secondary).setEmoji('⭐'))
+        }]);
     }
     if (channels.announce) {
         const msgs = await channels.announce.messages.fetch({ limit: 10 });
