@@ -95,6 +95,22 @@ async function setupServer(guild) {
         } catch (e) { console.log('  ❌ Konnte Willkommen-Channel nicht erstellen:', e.message); }
     }
 
+    // ── Auto-create 🎨・preview channel if missing ──
+    let previewCh = guild.channels.cache.find(c => c.name === '🎨・preview');
+    if (!previewCh) {
+        try {
+            const communityCat = guild.channels.cache.find(c => c.type === ChannelType.GuildCategory && c.name.toLowerCase().includes('community'));
+            previewCh = await guild.channels.create({
+                name: '🎨・preview',
+                type: ChannelType.GuildText,
+                topic: '🎨 TLS Service – Design Previews',
+                parent: communityCat?.id || null,
+                reason: 'Auto-created by TLS Bot'
+            });
+            console.log('  ✅ Channel "🎨・preview" erstellt!');
+        } catch (e) { console.log('  ❌ Konnte Preview-Channel nicht erstellen:', e.message); }
+    }
+
     const channels = {
         verify: guild.channels.cache.find(c => c.name === '✅・verifizierung'),
         ticket: guild.channels.cache.find(c => c.name === '🎫・ticket-erstellen'),
@@ -105,6 +121,7 @@ async function setupServer(guild) {
         portfolio: portfolioCh,
         preisliste: preislisteCh,
         welcome: welcomeCh,
+        preview: previewCh,
     };
 
     async function sendIfNew(ch, embed, row) {
@@ -291,6 +308,42 @@ async function setupServer(guild) {
         ]);
     } else {
         console.log('  ⚠️ Portfolio channel nicht gefunden!');
+    }
+
+    // ── Preview: clear & resend with both logos ──
+    if (channels.preview) {
+        await clearAndSend(channels.preview, [
+            {
+                embed: new EmbedBuilder()
+                    .setTitle('🎨 TLS Service – Design Preview')
+                    .setDescription(
+                        '**Unsere aktuellen Designs & Logos**\n\n' +
+                        '━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
+                        '✦ Premium Qualität\n' +
+                        '✦ Individuelles Design\n' +
+                        '✦ Professionelles Branding\n\n' +
+                        '> _Alle Designs werden von TLS Service erstellt._'
+                    )
+                    .setColor(0x5865F2)
+                    .setImage('https://media.discordapp.net/attachments/1373316107926114326/1474769190232658062/tlsservice.png?ex=699b0d56&is=6999bbd6&hm=f266f095e77dbd0147a039e5230b9e45ffe208fe353f0fdffe36392e5b938e45&=&format=webp&quality=lossless')
+                    .setFooter({ text: '© 2026 TLS Service • Design Preview' })
+                    .setTimestamp()
+            },
+            {
+                embed: new EmbedBuilder()
+                    .setTitle('🔹 TLS Logo Design')
+                    .setDescription(
+                        '**Logo Variante**\n\n' +
+                        '> _Hochwertiges Logo-Design für professionelles Branding._'
+                    )
+                    .setColor(0x57F287)
+                    .setImage('https://media.discordapp.net/attachments/1474733987233660998/1474734045643673732/SPOILER_tls_logo.png?ex=699aec9b&is=69999b1b&hm=dba238ffbbc0b3496933b9483c7d350f83c9057f3fdde3f6f1dc12cf217d91f0&=&format=webp&quality=lossless')
+                    .setFooter({ text: '© 2026 TLS Service • Logo Preview' })
+                    .setTimestamp()
+            }
+        ]);
+    } else {
+        console.log('  ⚠️ Preview channel nicht gefunden!');
     }
 
     console.log('✅ Setup abgeschlossen!');
