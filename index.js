@@ -81,6 +81,20 @@ async function setupServer(guild) {
         } catch (e) { console.log('  ❌ Konnte Preisliste-Channel nicht erstellen:', e.message); }
     }
 
+    // ── Auto-create 👋・willkommen channel if missing ──
+    let welcomeCh = guild.channels.cache.find(c => c.name === '👋・willkommen');
+    if (!welcomeCh) {
+        try {
+            welcomeCh = await guild.channels.create({
+                name: '👋・willkommen',
+                type: ChannelType.GuildText,
+                topic: '👋 Willkommen auf dem TLS Service Discord!',
+                reason: 'Auto-created by TLS Bot'
+            });
+            console.log('  ✅ Channel "👋・willkommen" erstellt!');
+        } catch (e) { console.log('  ❌ Konnte Willkommen-Channel nicht erstellen:', e.message); }
+    }
+
     const channels = {
         verify: guild.channels.cache.find(c => c.name === '✅・verifizierung'),
         ticket: guild.channels.cache.find(c => c.name === '🎫・ticket-erstellen'),
@@ -90,6 +104,7 @@ async function setupServer(guild) {
         announce: guild.channels.cache.find(c => c.name === '📢・ankündigungen'),
         portfolio: portfolioCh,
         preisliste: preislisteCh,
+        welcome: welcomeCh,
     };
 
     async function sendIfNew(ch, embed, row) {
@@ -296,6 +311,33 @@ client.once('ready', async () => {
 client.on('guildMemberAdd', async member => {
     const role = member.guild.roles.cache.find(r => r.name === config.roles.visitor);
     if (role) await member.roles.add(role).catch(() => { });
+
+    // ── Welcome Message ──
+    const welcomeCh = member.guild.channels.cache.find(c => c.name === '👋・willkommen');
+    if (welcomeCh) {
+        const rulesChannel = member.guild.channels.cache.find(c => c.name === '📜・regelwerk');
+        const verifyChannel = member.guild.channels.cache.find(c => c.name === '✅・verifizierung');
+        const memberCount = member.guild.memberCount;
+
+        const welcomeEmbed = new EmbedBuilder()
+            .setTitle('👋 Willkommen auf TLS Service!')
+            .setDescription(
+                `Hey ${member}, schön dich hier zu sehen! 🎉\n\n` +
+                `Du bist unser **${memberCount}. Mitglied** – willkommen in der Community!\n\n` +
+                `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+                `📜 **Regelwerk lesen:** ${rulesChannel ? `<#${rulesChannel.id}>` : '#regelwerk'}\n` +
+                `✅ **Verifizieren:** ${verifyChannel ? `<#${verifyChannel.id}>` : '#verifizierung'}\n\n` +
+                `━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+                `> _Lies zuerst das Regelwerk und verifiziere dich, um Zugang zu allen Kanälen zu erhalten!_`
+            )
+            .setThumbnail(member.user.displayAvatarURL({ size: 256, dynamic: true }))
+            .setColor(0x57F287)
+            .setImage(config.bannerUrl)
+            .setFooter({ text: `TLS Service • Mitglied #${memberCount}` })
+            .setTimestamp();
+
+        await welcomeCh.send({ content: `${member}`, embeds: [welcomeEmbed] }).catch(() => { });
+    }
 });
 
 // ── Messages ──
