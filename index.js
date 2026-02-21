@@ -38,11 +38,33 @@ function isOwner(member) {
     return r && member.roles.cache.has(r.id);
 }
 
-// ── Setup: only sends embeds to EXISTING channels, no creation ──
+// ── Setup: creates missing channels/roles and sends embeds ──
 async function setupServer(guild) {
     console.log(`⚙️  Checking: ${guild.name}`);
 
-    // Send embeds only if channel exists and has no bot embed yet
+    // ── Auto-create "Regelwerk Akzeptiert" role if missing ──
+    let rulesRole = guild.roles.cache.find(r => r.name === config.roles.rulesAccepted);
+    if (!rulesRole) {
+        try {
+            rulesRole = await guild.roles.create({ name: config.roles.rulesAccepted, color: 0x57F287, reason: 'Auto-created by TLS Bot' });
+            console.log('  ✅ Rolle "Regelwerk Akzeptiert" erstellt!');
+        } catch (e) { console.log('  ❌ Konnte Rolle nicht erstellen:', e.message); }
+    }
+
+    // ── Auto-create 📁・portfolio channel if missing ──
+    let portfolioCh = guild.channels.cache.find(c => c.name === '📁・portfolio');
+    if (!portfolioCh) {
+        try {
+            portfolioCh = await guild.channels.create({
+                name: '📁・portfolio',
+                type: ChannelType.GuildText,
+                topic: '🎨 TLS Service Portfolio – Unsere Arbeiten & Dienstleistungen',
+                reason: 'Auto-created by TLS Bot'
+            });
+            console.log('  ✅ Channel "📁・portfolio" erstellt!');
+        } catch (e) { console.log('  ❌ Konnte Portfolio-Channel nicht erstellen:', e.message); }
+    }
+
     const channels = {
         verify: guild.channels.cache.find(c => c.name === '✅・verifizierung'),
         ticket: guild.channels.cache.find(c => c.name === '🎫・ticket-erstellen'),
@@ -50,7 +72,7 @@ async function setupServer(guild) {
         rating: guild.channels.cache.find(c => c.name === '⭐・bewertungen'),
         rules: guild.channels.cache.find(c => c.name === '📜・regelwerk'),
         announce: guild.channels.cache.find(c => c.name === '📢・ankündigungen'),
-        portfolio: guild.channels.cache.find(c => c.name === '📁・portfolio'),
+        portfolio: portfolioCh,
     };
 
     async function sendIfNew(ch, embed, row) {
@@ -59,6 +81,17 @@ async function setupServer(guild) {
         if (!msgs.find(m => m.author.id === client.user.id && m.embeds.length > 0)) {
             await ch.send(row ? { embeds: [embed], components: [row] } : { embeds: [embed] });
         }
+    }
+
+    // ── Clear old Regelwerk messages (to re-send with Akzeptieren button) ──
+    if (channels.rules) {
+        try {
+            const oldMsgs = await channels.rules.messages.fetch({ limit: 10 });
+            const botMsgs = oldMsgs.filter(m => m.author.id === client.user.id && m.embeds.length > 0 && !m.components.length);
+            for (const [, msg] of botMsgs) {
+                await msg.delete().catch(() => { });
+            }
+        } catch (e) { }
     }
 
     if (channels.verify) {
