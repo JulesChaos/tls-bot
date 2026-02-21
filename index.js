@@ -115,10 +115,31 @@ async function setupServer(guild) {
         }
     }
 
-    // ── Preisliste Embed ──
+    // Helper: clear ALL bot messages in a channel and send fresh embed(s)
+    async function clearAndSend(ch, embeds, row) {
+        if (!ch) return;
+        try {
+            const msgs = await ch.messages.fetch({ limit: 20 });
+            const botMsgs = msgs.filter(m => m.author.id === client.user.id);
+            for (const [, msg] of botMsgs) {
+                await msg.delete().catch(() => { });
+            }
+        } catch (e) { }
+        // Send all embeds
+        for (const embedData of embeds) {
+            if (embedData.row) {
+                await ch.send({ embeds: [embedData.embed], components: [embedData.row] }).catch(e => console.log('  ❌ Send error:', e.message));
+            } else {
+                await ch.send({ embeds: [embedData.embed] }).catch(e => console.log('  ❌ Send error:', e.message));
+            }
+        }
+        console.log(`  ✅ ${ch.name} – Embeds gesendet!`);
+    }
+
+    // ── Preisliste: ALWAYS clear & resend ──
     if (channels.preisliste) {
-        await sendIfNew(channels.preisliste,
-            new EmbedBuilder()
+        await clearAndSend(channels.preisliste, [{
+            embed: new EmbedBuilder()
                 .setTitle('💰 TLS Service – Preisliste')
                 .setDescription(
                     '**Unsere Dienstleistungen & Preise**\n\n' +
@@ -138,10 +159,12 @@ async function setupServer(guild) {
                 .setImage(config.bannerUrl)
                 .setFooter({ text: '© 2026 TLS Service • Preise können variieren' })
                 .setTimestamp()
-        );
+        }]);
+    } else {
+        console.log('  ⚠️ Preisliste channel nicht gefunden!');
     }
 
-    // ── Clear old Regelwerk messages (to re-send with Akzeptieren button) ──
+    // ── Regelwerk: clear old (without button) & resend with Akzeptieren ──
     if (channels.rules) {
         try {
             const oldMsgs = await channels.rules.messages.fetch({ limit: 10 });
@@ -220,60 +243,56 @@ async function setupServer(guild) {
         }
     }
 
-    // ── Portfolio Channel ──
+    // ── Portfolio: ALWAYS clear & resend ──
     if (channels.portfolio) {
-        await sendIfNew(channels.portfolio,
-            new EmbedBuilder()
-                .setTitle('🎨 TLS Service – Portfolio')
-                .setDescription(
-                    '**Professionelle Dienstleistungen für FiveM & Discord**\n\n' +
-                    '━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
-                    '🌐 **Premium FiveM Webdesign**\n' +
-                    '> Moderne, responsive Websites mit Glassmorphism, Animationen und individuellem Design – maßgeschneidert für deinen Server.\n\n' +
-                    '🤖 **Discord Bot Entwicklung**\n' +
-                    '> Vollständig anpassbare Discord Bots mit Ticket-System, Moderation, Verifizierung, Feedback und mehr.\n\n' +
-                    '⚙️ **Custom Scripting**\n' +
-                    '> Individuelle FiveM Scripts und Systeme – von der Idee bis zur fertigen Lösung.\n\n' +
-                    '🎨 **Branding & Design**\n' +
-                    '> Logos, Banner, Server-Icons und komplette visuelle Identitäten für deinen FiveM-Server.\n\n' +
-                    '━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
-                    '💎 **Warum TLS Service?**\n' +
-                    '✦ Premium Qualität – keine Standard-Templates\n' +
-                    '✦ Individuelle Lösungen nach deinen Wünschen\n' +
-                    '✦ Schnelle Lieferung & professioneller Support\n' +
-                    '✦ Faire Preise für höchste Qualität\n\n' +
-                    '━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
-                    '📩 **Interesse?** Erstelle ein Ticket im <#' + (channels.ticket?.id || 'ticket-channel') + '> Kanal!'
-                )
-                .setColor(0x5865F2)
-                .setImage(config.bannerUrl)
-                .setFooter({ text: '© 2026 TLS Service • Since 2025. Reborn 2026.' })
-                .setTimestamp()
-        );
-
-        // Send a second embed as a visual showcase card
-        const msgs = await channels.portfolio.messages.fetch({ limit: 10 });
-        const hasShowcase = msgs.find(m => m.author.id === client.user.id && m.embeds.length > 0 && m.embeds[0].title?.includes('Referenzen'));
-        if (!hasShowcase) {
-            await channels.portfolio.send({
-                embeds: [
-                    new EmbedBuilder()
-                        .setTitle('📂 Referenzen & Projekte')
-                        .setDescription(
-                            '**Bisherige Arbeiten von TLS Service:**\n\n' +
-                            '🔹 **Nordi City RP** – Premium Website mit Hero-Section, Features, Team-Bereich und dynamischen Animationen\n\n' +
-                            '🔹 **TLS Roleplay** – Vollständige FiveM Website mit Custom Cursor, Glassmorphism und professionellem Branding\n\n' +
-                            '🔹 **Discord Bot Suite** – Kompletter Bot mit Ticket-System, Moderation, Auto-Mod, Feedback, Bewertungen und Verifizierung\n\n' +
-                            '🔹 **Custom Server Setups** – Komplette Discord Server mit Channels, Rollen, eingebetteten Systemen und Branding\n\n' +
-                            '━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
-                            '> _Jedes Projekt wird individuell und mit höchstem Anspruch umgesetzt._'
-                        )
-                        .setColor(0x57F287)
-                        .setFooter({ text: '© 2026 TLS Service | Alle Rechte vorbehalten' })
-                        .setTimestamp()
-                ]
-            });
-        }
+        await clearAndSend(channels.portfolio, [
+            {
+                embed: new EmbedBuilder()
+                    .setTitle('🎨 TLS Service – Portfolio')
+                    .setDescription(
+                        '**Professionelle Dienstleistungen für FiveM & Discord**\n\n' +
+                        '━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
+                        '🌐 **Premium FiveM Webdesign**\n' +
+                        '> Moderne, responsive Websites mit Glassmorphism, Animationen und individuellem Design – maßgeschneidert für deinen Server.\n\n' +
+                        '🤖 **Discord Bot Entwicklung**\n' +
+                        '> Vollständig anpassbare Discord Bots mit Ticket-System, Moderation, Verifizierung, Feedback und mehr.\n\n' +
+                        '⚙️ **Custom Scripting**\n' +
+                        '> Individuelle FiveM Scripts und Systeme – von der Idee bis zur fertigen Lösung.\n\n' +
+                        '🎨 **Branding & Design**\n' +
+                        '> Logos, Banner, Server-Icons und komplette visuelle Identitäten für deinen FiveM-Server.\n\n' +
+                        '━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
+                        '💎 **Warum TLS Service?**\n' +
+                        '✦ Premium Qualität – keine Standard-Templates\n' +
+                        '✦ Individuelle Lösungen nach deinen Wünschen\n' +
+                        '✦ Schnelle Lieferung & professioneller Support\n' +
+                        '✦ Faire Preise für höchste Qualität\n\n' +
+                        '━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
+                        '📩 **Interesse?** Erstelle ein Ticket im <#' + (channels.ticket?.id || 'ticket-channel') + '> Kanal!'
+                    )
+                    .setColor(0x5865F2)
+                    .setImage(config.bannerUrl)
+                    .setFooter({ text: '© 2026 TLS Service • Since 2025. Reborn 2026.' })
+                    .setTimestamp()
+            },
+            {
+                embed: new EmbedBuilder()
+                    .setTitle('📂 Referenzen & Projekte')
+                    .setDescription(
+                        '**Bisherige Arbeiten von TLS Service:**\n\n' +
+                        '🔹 **Nordi City RP** – Premium Website mit Hero-Section, Features, Team-Bereich und dynamischen Animationen\n\n' +
+                        '🔹 **TLS Roleplay** – Vollständige FiveM Website mit Custom Cursor, Glassmorphism und professionellem Branding\n\n' +
+                        '🔹 **Discord Bot Suite** – Kompletter Bot mit Ticket-System, Moderation, Auto-Mod, Feedback, Bewertungen und Verifizierung\n\n' +
+                        '🔹 **Custom Server Setups** – Komplette Discord Server mit Channels, Rollen, eingebetteten Systemen und Branding\n\n' +
+                        '━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
+                        '> _Jedes Projekt wird individuell und mit höchstem Anspruch umgesetzt._'
+                    )
+                    .setColor(0x57F287)
+                    .setFooter({ text: '© 2026 TLS Service | Alle Rechte vorbehalten' })
+                    .setTimestamp()
+            }
+        ]);
+    } else {
+        console.log('  ⚠️ Portfolio channel nicht gefunden!');
     }
 
     console.log('✅ Setup abgeschlossen!');
