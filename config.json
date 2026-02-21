@@ -1,0 +1,16 @@
+{
+    "roles": {
+        "verified": "Verified",
+        "visitor": "Besucher",
+        "moderator": "Moderator",
+        "rulesAccepted": "Regelwerk Akzeptiert"
+    },
+    "channels": {
+        "verify": "verify",
+        "tickets": "tickets",
+        "logs": "mod-logs",
+        "feedback": "feedback",
+        "portfolio": "portfolio"
+    },
+    "bannerUrl": "https://media.discordapp.net/attachments/1473981578064433222/1473981985230684271/ChatGPT_Image_19._Feb._2026_10_17_59.png?ex=69983032&is=6996deb2&hm=d1eb43784bd6a750bfd0740e45bb0f2ef2b332f0d894b14af6060a135de651bb&=&format=webp&quality=lossless"
+}
